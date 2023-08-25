@@ -298,7 +298,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Snake Game".to_string(),
-                position: WindowPosition::At((500, 500).into()),
+                resolution: (500, 500).into(),
                 resizable: false,
                 ..default()
             }),
