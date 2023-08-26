@@ -9,6 +9,8 @@ const SNAKE_HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
 const FOOD_COLOR: Color = Color::rgb(1.0, 0.0, 1.0);
 const SNAKE_SEGMENT_COLOR: Color = Color::rgb(0.3, 0.3, 0.3);
 
+const WINDOW_WIDTH: f32 = 700.;
+const WINDOW_HEIGHT: f32 = 700.;
 const ARENA_HEIGHT: u32 = 15;
 const ARENA_WIDTH: u32 = 15;
 
@@ -221,33 +223,25 @@ fn snake_growth(
     }
 }
 
-fn size_scaling(
-    windows: Query<&Window, With<PrimaryWindow>>,
-    mut q: Query<(&Size, &mut Transform)>,
-) {
-    let window = windows.get_single().unwrap();
+fn size_scaling(mut q: Query<(&Size, &mut Transform)>) {
     for (sprite_size, mut transform) in q.iter_mut() {
         transform.scale = Vec3::new(
-            sprite_size.width / ARENA_WIDTH as f32 * window.width(),
-            sprite_size.height / ARENA_HEIGHT as f32 * window.height(),
+            sprite_size.width / ARENA_WIDTH as f32 * WINDOW_WIDTH,
+            sprite_size.height / ARENA_HEIGHT as f32 * WINDOW_HEIGHT,
             1.0,
         );
     }
 }
 
-fn position_translation(
-    windows: Query<&Window, With<PrimaryWindow>>,
-    mut q: Query<(&Position, &mut Transform)>,
-) {
+fn position_translation(mut q: Query<(&Position, &mut Transform)>) {
     fn convert(pos: f32, bound_window: f32, bound_game: f32) -> f32 {
         let tile_size = bound_window / bound_game;
         pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
     }
-    let window = windows.get_single().unwrap();
     for (pos, mut transform) in q.iter_mut() {
         transform.translation = Vec3::new(
-            convert(pos.x as f32, window.width(), ARENA_WIDTH as f32),
-            convert(pos.y as f32, window.height(), ARENA_HEIGHT as f32),
+            convert(pos.x as f32, WINDOW_WIDTH, ARENA_WIDTH as f32),
+            convert(pos.y as f32, WINDOW_HEIGHT, ARENA_HEIGHT as f32),
             0.0,
         );
     }
@@ -298,7 +292,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Snake Game".to_string(),
-                resolution: (700., 700.).into(),
+                resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
                 resizable: false,
                 ..default()
             }),
