@@ -9,8 +9,8 @@ const SNAKE_HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
 const FOOD_COLOR: Color = Color::rgb(1.0, 0.0, 1.0);
 const SNAKE_SEGMENT_COLOR: Color = Color::rgb(0.3, 0.3, 0.3);
 
-const ARENA_HEIGHT: u32 = 10;
-const ARENA_WIDTH: u32 = 10;
+const ARENA_HEIGHT: u32 = 15;
+const ARENA_WIDTH: u32 = 15;
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 struct Position {
@@ -298,7 +298,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Snake Game".to_string(),
-                resolution: (500., 500.).into(),
+                resolution: (700., 700.).into(),
                 resizable: false,
                 ..default()
             }),
