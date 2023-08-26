@@ -2,17 +2,21 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
-use bevy::window::PrimaryWindow;
 use rand::prelude::random;
 
 const SNAKE_HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
 const FOOD_COLOR: Color = Color::rgb(1.0, 0.0, 1.0);
 const SNAKE_SEGMENT_COLOR: Color = Color::rgb(0.3, 0.3, 0.3);
+const TEXT_COLOR: Color = Color::rgb(0.5, 0.5, 1.0);
+const SCORE_COLOR: Color = Color::rgb(1.0, 0.5, 0.5);
 
 const WINDOW_WIDTH: f32 = 700.;
 const WINDOW_HEIGHT: f32 = 700.;
 const ARENA_HEIGHT: u32 = 15;
 const ARENA_WIDTH: u32 = 15;
+
+const SCOREBOARD_FONT_SIZE: f32 = 40.0;
+const SCOREBOARD_TEXT_PADDING: Val = Val::Px(5.0);
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 struct Position {
@@ -64,6 +68,11 @@ enum Direction {
     Down,
 }
 
+#[derive(Resource)]
+struct Scoreboard {
+    score: usize,
+}
+
 impl Direction {
     fn opposite(self) -> Self {
         match self {
@@ -75,8 +84,32 @@ impl Direction {
     }
 }
 
-fn setup_camera(mut commands: Commands) {
+fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
+
+    commands.spawn(
+        TextBundle::from_sections([
+            TextSection::new(
+                "Score: ",
+                TextStyle {
+                    font_size: SCOREBOARD_FONT_SIZE,
+                    color: TEXT_COLOR,
+                    ..default()
+                },
+            ),
+            TextSection::from_style(TextStyle {
+                font_size: SCOREBOARD_FONT_SIZE,
+                color: SCORE_COLOR,
+                ..default()
+            }),
+        ])
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            top: SCOREBOARD_TEXT_PADDING,
+            left: SCOREBOARD_TEXT_PADDING,
+            ..default()
+        }),
+    );
 }
 
 fn spawn_snake(mut commands: Commands, mut segments: ResMut<SnakeSegments>) {
@@ -187,11 +220,13 @@ fn game_over(
     segments_res: ResMut<SnakeSegments>,
     food: Query<Entity, With<Food>>,
     segments: Query<Entity, With<SnakeSegment>>,
+    mut scoreboard: ResMut<Scoreboard>,
 ) {
     if reader.iter().next().is_some() {
         for ent in food.iter().chain(segments.iter()) {
             commands.entity(ent).despawn();
         }
+        scoreboard.score = 0;
         spawn_snake(commands, segments_res);
     }
 }
@@ -201,10 +236,12 @@ fn snake_eating(
     mut growth_writer: EventWriter<GrowthEvent>,
     food_positions: Query<(Entity, &Position), With<Food>>,
     head_positions: Query<&Position, With<SnakeHead>>,
+    mut scoreboard: ResMut<Scoreboard>,
 ) {
     for head_pos in head_positions.iter() {
         for (ent, food_pos) in food_positions.iter() {
             if food_pos == head_pos {
+                scoreboard.score += 10;
                 commands.entity(ent).despawn();
                 growth_writer.send(GrowthEvent);
             }
@@ -264,15 +301,28 @@ fn food_spawner(mut commands: Commands) {
         .insert(Size::square(0.8));
 }
 
+fn update_scoreboard(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
+    let mut text = query.single_mut();
+    text.sections[1].value = scoreboard.score.to_string();
+}
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
-        .add_systems(Startup, setup_camera)
+        .add_systems(Startup, setup)
         .add_systems(Startup, spawn_snake)
+        .insert_resource(Scoreboard { score: 0 })
         .insert_resource(SnakeSegments::default())
         .insert_resource(LastTailPosition::default())
         .add_event::<GrowthEvent>()
-        .add_systems(Update, snake_movement_input.before(snake_movement))
+        .add_systems(
+            Update,
+            (
+                snake_movement_input.before(snake_movement),
+                update_scoreboard,
+                bevy::window::close_on_esc,
+            ),
+        )
         .add_event::<GameOverEvent>()
         .add_systems(
             Update,
