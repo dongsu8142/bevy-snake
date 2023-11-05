@@ -222,7 +222,7 @@ fn game_over(
     segments: Query<Entity, With<SnakeSegment>>,
     mut scoreboard: ResMut<Scoreboard>,
 ) {
-    if reader.iter().next().is_some() {
+    if reader.read().next().is_some() {
         for ent in food.iter().chain(segments.iter()) {
             commands.entity(ent).despawn();
         }
@@ -255,7 +255,7 @@ fn snake_growth(
     mut segments: ResMut<SnakeSegments>,
     mut growth_reader: EventReader<GrowthEvent>,
 ) {
-    if growth_reader.iter().next().is_some() {
+    if growth_reader.read().next().is_some() {
         segments.push(spawn_segment(commands, last_tail_position.0.unwrap()));
     }
 }
